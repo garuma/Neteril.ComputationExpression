@@ -23,7 +23,7 @@ using Neteril.ComputationExpression;
 
 ## The Maybe workflow with Option\<T>
 
-Boilerplate implementation of a `Option` monad type and its expression builder based on the code above
+Boilerplate implementation of a `Option` monad type and its expression builder using the library.
 
 ```csharp
 abstract class Option<T> : Monad<T> { }
@@ -235,13 +235,15 @@ public class EnumerableBuilder : IMonadExpressionBuilder
 ```csharp
 #pragma warning disable 4014
 
+using static Neteril.ComputationExpression.ComputationExpression;
+
 var result = ComputationExpression.Run<int, EnumerableMonad<int>> (new EnumerableBuilder (), async () => {
 	var item = await new EnumerableMonad<int> (new [] { 1, 2, 3 });
 	var item2 = await new EnumerableMonad<int> (new [] { 100, 200 });
 	// We want back a enumeration containing the concatenation of (item, item2, item1 * item2)
 	// for all successive values of item1 and item2
-	await ComputationExpression.Yield (item);
-	await ComputationExpression.Yield (item2);
+	await Yield (item);
+	await Yield (item2);
 	return item * item2;
 });
 // Prints "1, 100, 100, 1, 200, 200, 2, 100, 200, 2, 200, 400, 3, 100, 300, 3, 200, 600"
