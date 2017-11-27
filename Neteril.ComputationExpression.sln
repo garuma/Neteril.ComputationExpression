@@ -1,0 +1,37 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neteril.ComputationExpression", "Neteril.ComputationExpression\Neteril.ComputationExpression.csproj", "{C80AA0C4-FF69-4C62-ABA4-76D8414E6FCB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C80AA0C4-FF69-4C62-ABA4-76D8414E6FCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C80AA0C4-FF69-4C62-ABA4-76D8414E6FCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C80AA0C4-FF69-4C62-ABA4-76D8414E6FCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C80AA0C4-FF69-4C62-ABA4-76D8414E6FCB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.TextStylePolicy = $1
+		$1.inheritsSet = null
+		$1.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $2
+		$2.NewLinesForBracesInProperties = False
+		$2.NewLinesForBracesInAccessors = False
+		$2.NewLinesForBracesInAnonymousMethods = False
+		$2.NewLinesForBracesInControlBlocks = False
+		$2.NewLinesForBracesInAnonymousTypes = False
+		$2.NewLinesForBracesInObjectCollectionArrayInitializers = False
+		$2.NewLinesForBracesInLambdaExpressionBody = False
+		$2.NewLineForElse = False
+		$2.NewLineForCatch = False
+		$2.NewLineForFinally = False
+		$2.SpacingAfterMethodDeclarationName = True
+		$2.SpaceAfterMethodCallName = True
+		$2.scope = text/x-csharp
+	EndGlobalSection
+EndGlobal
