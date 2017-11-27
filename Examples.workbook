@@ -250,7 +250,7 @@ string.Join (", ", result.Select (i => i.ToString ()));
 
 ## Probabilities as monads
 
-Probability distribution can be represented as monads and thus chain together. The example used here comes courtesy of [https://www.chrisstucchio.com/blog/2016/probability\_the\_monad.html](https://www.chrisstucchio.com/blog/2016/probability%5C_the%5C_monad.html)
+Probability distribution can be represented as monads and thus chain together. The example used here comes courtesy of [https://www.chrisstucchio.com/blog/2016/probability\_the\_monad.html](https://www.chrisstucchio.com/blog/2016/probability_the_monad.html)
 
 Note that for execution time constraints, sampling count has been drastically reduced so that the histogram at the end can be generated in a reasonable amount of time (still can take a minute or two). Ultimately that means actual results are probably not that correct.
 
