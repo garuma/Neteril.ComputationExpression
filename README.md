@@ -2,7 +2,7 @@
 
 <a href="https://www.nuget.org/packages/Neteril.ComputationExpression"><img src="https://img.shields.io/nuget/v/Neteril.ComputationExpression.svg" alt="NuGet" /></a>
 
-A generic re-implementation of F# computation expressions in C# by (ab)using async/await.
+A generic re-implementation of [F# computation expressions](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions) in C# by (ab)using async/await.
 
 TL;DR lifting the tricks of [my previous attempt](https://blog.neteril.org/blog/2017/04/26/maybe-computation-expression-csharp/) at borrowing F# computation expression concepts in C# into a generic form that can be reused for other builder types.
 
@@ -39,12 +39,13 @@ Option<int> TryDivide (int up, int down)
 
 class MaybeBuilder : IMonadExpressionBuilder
 {
-	public Monad<T> Bind<T> (Monad<T> m, Func<T, Monad<T>> f)
+	Monad<T> IMonadExpressionBuilder.Bind<U, T> (Monad<U> m, Func<U, Monad<T>> f)
 	{
-		switch ((Option<T>)m) {
-			case Some<T> some: return f (some.Item);
-			case None<T> none: return none;
-			default: return None<T>.Value;
+		switch ((Option<U>)m) {
+			case Some<U> some: return f (some.Item);
+			case None<U> none:
+			default:
+				return None<T>.Value;
 		}
 	}
 	public Monad<T> Return<T> (T v) => Some.Of (v);
