@@ -12,51 +12,50 @@ Basically the idea is to go from this kind of F#:
 
 ```fsharp
 let divideBy bottom top =
-	if bottom = 0
-	then None
-	else Some(top/bottom)
+  if bottom = 0
+  then None
+  else Some(top/bottom)
 
 type MaybeBuilder() =
-	member this.Bind(m, f) = Option.bind f m
-	member this.Return(x) = Some x
+  member this.Bind(m, f) = Option.bind f m
+  member this.Return(x) = Some x
 
 let maybe = new MaybeBuilder()
 
 let divideByWorkflow =
-	maybe {
-		let! a = 120 |> divideBy 2
-		let! b = a |> divideBy 2
-		let! c = b |> divideBy 2
-		return c
-	}
+  maybe {
+    let! a = 120 |> divideBy 2
+    let! b = a |> divideBy 2
+    let! c = b |> divideBy 2
+    return c
+  }
 ```
 
 To this kind of C#:
 
 ```csharp
 Option<int> TryDivide (int up, int down)
-	=> return down == 0 ? None<int>.Value : Some.Of (up / down);
+  => down == 0 ? None<int>.Value : Some.Of (up / down);
 
 class MaybeBuilder : IMonadExpressionBuilder
 {
-	Monad<T> IMonadExpressionBuilder.Bind<U, T> (Monad<U> m, Func<U, Monad<T>> f)
-	{
-		switch ((Option<U>)m) {
-			case Some<U> some: return f (some.Item);
-			case None<U> none:
-			default:
-				return None<T>.Value;
-		}
-	}
-	public Monad<T> Return<T> (T v) => Some.Of (v);
-	public Monad<T> Zero<T> () => None<T>.Value;
+  Monad<T> IMonadExpressionBuilder.Bind<U, T> (Monad<U> m, Func<U, Monad<T>> f)
+  {
+    switch ((Option<U>)m) {
+      case Some<U> some: return f (some.Item);
+      case None<U> none:
+      default: return None<T>.Value;
+    }
+  }
+  public Monad<T> Return<T> (T v) => Some.Of (v);
+  public Monad<T> Zero<T> () => None<T>.Value;
 }
 
 ComputationExpression.Run<int, Option<int>> (new MaybeBuilder (), async () => {
-	var val1 = await TryDivide (120, 2);
-	var val2 = await TryDivide (val1, 2);
-	var val3 = await TryDivide (val2, 2);
-	return val3;
+  var val1 = await TryDivide (120, 2);
+  var val2 = await TryDivide (val1, 2);
+  var val3 = await TryDivide (val2, 2);
+  return val3;
 })
 ```
 
