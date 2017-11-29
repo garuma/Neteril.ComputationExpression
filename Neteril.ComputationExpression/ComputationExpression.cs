@@ -7,8 +7,8 @@ namespace Neteril.ComputationExpression
 		[ThreadStatic]
 		internal static IMonadExpressionBuilder CurrentBuilder = null;
 
-		public static TMonad Run<T, TMonad> (IMonadExpressionBuilder builder, Func<Monad<T>> body)
-			where TMonad : Monad<T>
+		public static TMonad Run<T, TMonad> (IMonadExpressionBuilder builder, Func<IMonad<T>> body)
+			where TMonad : IMonad<T>
 		{
 			try {
 				CurrentBuilder = builder;

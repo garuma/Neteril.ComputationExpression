@@ -6,7 +6,7 @@ namespace Neteril.ComputationExpression
 	public class MonadAsyncMethodBuilder<T>
 	{
 		IMonadExpressionBuilder builder;
-		Monad<T> finalResult;
+		IMonad<T> finalResult;
 		System.Reflection.MethodInfo processBind;
 
 		public static MonadAsyncMethodBuilder<T> Create ()
@@ -32,7 +32,7 @@ namespace Neteril.ComputationExpression
 			stateMachine.MoveNext ();
 		}
 
-		public Monad<T> Task => finalResult;
+		public IMonad<T> Task => finalResult;
 
 		public void SetStateMachine (IAsyncStateMachine stateMachine) { }
 		public void SetResult (T result)

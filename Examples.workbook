@@ -3,7 +3,7 @@ packages:
 - id: MathNet.Numerics.Core
   version: 3.17.0
 - id: Neteril.ComputationExpression
-  version: 0.1.0
+  version: 0.1.1
 - id: OxyPlot.Core
   version: 2.0.0-unstable1013
 uti: com.xamarin.workbook
@@ -23,54 +23,23 @@ using Neteril.ComputationExpression;
 
 ## The Maybe workflow with Option\<T>
 
-Boilerplate implementation of a `Option` monad type and its expression builder using the library.
+`Option<T>` can have two outcomes `None` or `Some<T>`, only the Some case contains an actual value where None can be used to represent a potential error state.
+
+Working with `Option<T>` would normally be a bit of pain because you would have to type check it manually to extra a potential value and do multiple `if` statements if doing successive statements using `Option<T>`.
+
+Using the associated computation expression makes it much easier by automatically abstracting away both the value unwrapping and the `if` serie in case a `None` appears in the computation stream.
+
+First here are some extra helpers to work with `Option<T>` that we will use in the example:
 
 ```csharp
-abstract class Option<T> : Monad<T> { }
+// The Option monad is given in the library
+using Neteril.ComputationExpression.Instances;
 
-sealed class None<T> : Option<T> { public static readonly None<T> Value = new None<T> (); }
-sealed class Some<T> : Option<T>
-{
-	public readonly T Item;
-	public Some (T item) => Item = item;
-	public static explicit operator T (Some<T> option) => option.Item;
-}
-
-static class Some
-{
-	public static Some<T> Of<T> (T value) => new Some<T> (value);
-}
-
-class MaybeBuilder : IMonadExpressionBuilder
-{
-	Monad<T> IMonadExpressionBuilder.Bind<U, T> (Monad<U> m, Func<U, Monad<T>> f)
-	{
-		switch ((Option<U>)m) {
-			case Some<U> some:
-				return f (some.Item);
-			case None<U> none:
-			default:
-				return None<T>.Value;
-		}
-	}
-
-	Monad<T> IMonadExpressionBuilder.Return<T> (T v) => Some.Of (v);
-
-	Monad<T> IMonadExpressionBuilder.Zero<T> () => None<T>.Value;
-
-	Monad<T> IMonadExpressionBuilder.Combine<T> (Monad<T> m, Monad<T> n) => throw new NotSupportedException ();
-}
-```
-
-Some extra helpers to work with `Option<T>`
-
-```csharp
 static Option<int> TryDivide (int up, int down)
 {
 	Console.WriteLine ($"Trying to execute division {up}/{down}");
 	if (down == 0)
 		return None<int>.Value;
-
 	return Some.Of (up / down);
 }
 
@@ -88,14 +57,11 @@ static void PrintResult<T> (Option<T> maybe)
 }
 ```
 
-In this example we are simulating the maybe computation expression which allows to short-circuit a series of statement based on the `Option` monad outcome.
+In this example we are executing a succession of division, modeling the error case of dividing by zero (usually an exception in C#) by instead returning `None`. When that happens, the computation expression will short-circuit the rest of the statements and simply return `None` directly.
 
 ```csharp
-// We don't want any "this call is not awaited" warnings since we know what we are doing(?)
-#pragma warning disable 4014
-
-Console.WriteLine ("## Good example");
-var good = ComputationExpression.Run<int, Option<int>> (new MaybeBuilder (), async () => {
+Console.WriteLine ("Good example");
+var good = ComputationExpression.Run<int, Option<int>> (new OptionExpressionBuilder (), async () => {
 	var val1 = await TryDivide (120, 2);
 	var val2 = await TryDivide (val1, 2);
 	var val3 = await TryDivide (val2, 2);
@@ -105,8 +71,8 @@ var good = ComputationExpression.Run<int, Option<int>> (new MaybeBuilder (), asy
 PrintResult (good);
 
 Console.WriteLine ();
-Console.WriteLine ("## Bad example");
-var bad = ComputationExpression.Run<int, Option<int>> (new MaybeBuilder (), async () => {
+Console.WriteLine ("Bad example");
+var bad = ComputationExpression.Run<int, Option<int>> (new OptionExpressionBuilder (), async () => {
 	var val1 = await TryDivide (120, 2);
 	var val2 = await TryDivide (val1, 0);
 	var val3 = await TryDivide (val2, 2);
@@ -118,141 +84,75 @@ PrintResult (bad);
 
 If you run that final block of code your output should like this:
 
-\## Good example
+<pre><code>Good example
 
-Trying to execute division 120/2\
-Trying to execute division 60/2\
-Trying to execute division 30/2\
-Some 15\
-\
-\## Bad example
+Trying to execute division 120/2
+Trying to execute division 60/2
+Trying to execute division 30/2
+Some 15
 
-Trying to execute division 120/2\
-Trying to execute division 60/0\
+Bad example
+
+Trying to execute division 120/2
+Trying to execute division 60/0
 None
-
-## Haskell State monad
-
-In Haskell pure world, state is not allowed to be mutated. Instead the intention is reproduced via the State monad that allows a piece of state to be propagated at the same time as intermediary results.
-
-Now let's borrow some State monad fun from the Haskell tutorial at [https://en.wikibooks.org/wiki/Haskell/Understanding\_monads/State](https://en.wikibooks.org/wiki/Haskell/Understanding_monads/State)
-
-This is somewhat cheating in our case because where in Haskell it makes sense to pass the random value as state to be used as the next random seed, in C# it’s not really necessary since the before state is already encapsulated in the Random class.
-
-```csharp
-public class State<TState, TValue> : Monad<TValue>
-{
-	Func<TState, (TValue, TState)> stateProcessor;
-
-	public State (Func<TState, (TValue, TState)> stateProcessor)
-	{
-		this.stateProcessor = stateProcessor;
-	}
-
-	public (TValue value, TState state) RunState (TState state) => stateProcessor (state);
-}
-
-public static State<TState, TValue> Put<TState, TValue> (TState state)
- 	=> new State<TState, TValue> (_ => (default, state));
-public static State<TState, TState> Get<TState> ()
-	=> new State<TState, TState> (s => (s, s));
-
-public static TValue EvalState<TState, TValue> (State<TState, TValue> stateMonad, TState state)
-	=> stateMonad.RunState (state).value;
-public static TState ExecState<TState, TValue> (State<TState, TValue> stateMonad, TState state)
-	=> stateMonad.RunState (state).state;
-
-public class StateBuilder<TState> : IMonadExpressionBuilder
-{
-	Monad<T> IMonadExpressionBuilder.Bind<U, T> (Monad<U> m, Func<U, Monad<T>> f)
-	{
-		var previousStateMonad = ((State<TState, U>)m);
-		return new State<TState, T> (s => {
-			var (value, newState) = previousStateMonad.RunState (s);
-			var nextMonad = (State<TState, T>)f (value);
-			return nextMonad.RunState (newState);
-		});
-	}
-
-	Monad<T> IMonadExpressionBuilder.Return<T> (T v) => new State<TState, T> (s => (v, s));
-
-	Monad<T> IMonadExpressionBuilder.Zero<T> () => new State<TState, T> (s => (default, s));
-
-	Monad<T> IMonadExpressionBuilder.Combine<T> (Monad<T> m, Monad<T> n) => throw new NotSupportedException ();
-}
-```
-
-```csharp
-#pragma warning disable 4014
-
-static (int random, Random generator) RandomR ((int low, int high) interval, Random initialGenerator)
-	=> (initialGenerator.Next (interval.low, interval.high), new Random ());
-
-var rollDie = ComputationExpression.Run<int, State<Random, int>> (new StateBuilder<Random> (), async () => {
-	var generator = await Get<Random> ();
-	var (value, newGenerator) = RandomR ((1, 6), generator);
-	await Put<Random, int> (newGenerator);
-	return value;
-});
-// Returns a random integer value from the monad computation
-EvalState<Random, int> (rollDie, new Random ());
-```
+</code></pre>
 
 ## Re-creating yield state machine
 
-We can also end up re-creating our good old `yield return` but with async/await and some help from the extra `Combine` operation of our computation expression builder. The result is somewhat more verbose but it’s doable.
-
-```csharp
-public class EnumerableMonad<T> : Monad<T>, IEnumerable<T>
-{
-	IEnumerable<T> seed;
-	public EnumerableMonad (IEnumerable<T> seed) => this.seed = seed;
-	public IEnumerator<T> GetEnumerator () => seed.GetEnumerator ();
-	System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator () => seed.GetEnumerator ();
-}
-
-public class EnumerableBuilder : IMonadExpressionBuilder
-{
-	Monad<T> IMonadExpressionBuilder.Bind<U, T> (Monad<U> m, Func<U, Monad<T>> f)
-	{
-		var previousEnumerableMonad = (EnumerableMonad<U>)m;
-		return new EnumerableMonad<T> (previousEnumerableMonad.SelectMany (u => (EnumerableMonad<T>)f (u)));
-	}
-
-	Monad<T> IMonadExpressionBuilder.Return<T> (T v) => new EnumerableMonad<T> (Enumerable.Repeat (v, 1));
-
-	Monad<T> IMonadExpressionBuilder.Zero<T> () => new EnumerableMonad<T> (Enumerable.Empty<T> ());
-
-	Monad<T> IMonadExpressionBuilder.Combine<T> (Monad<T> m, Monad<T> n)
-	{
-		var enumerableMonad1 = (EnumerableMonad<T>)m;
-		var enumerableMonad2 = (EnumerableMonad<T>)n;
-		return new EnumerableMonad<T> (enumerableMonad1.Concat (enumerableMonad2));
-	}
-}
-```
+We can also end up re-creating our good old `yield return` but with async/await and some help from the extra `Combine` operation of our computation expression builder. The result is somewhat more verbose but it’s doable. The code is using the built-in `EnumerableMonad` type.
 
 ```csharp
 #pragma warning disable 4014
 
 using static Neteril.ComputationExpression.ComputationExpression;
+// The Enumerable monad is given in the library
+using Neteril.ComputationExpression.Instances;
 
-var result = ComputationExpression.Run<int, EnumerableMonad<int>> (new EnumerableBuilder (), async () => {
-	var item = await new EnumerableMonad<int> (new [] { 1, 2, 3 });
-	var item2 = await new EnumerableMonad<int> (new [] { 100, 200 });
+var result = ComputationExpression.Run<int, EnumerableMonad<int>> (new EnumerableExpressionBuilder (), async () => {
+	var item = await (EnumerableMonad<int>)new [] { 1, 2, 3 };
+	var item2 = await (EnumerableMonad<int>)new [] { 100, 200 };
 	// We want back a enumeration containing the concatenation of (item, item2, item1 * item2)
 	// for all successive values of item1 and item2
 	await Yield (item);
 	await Yield (item2);
 	return item * item2;
 });
-// Prints "1, 100, 100, 1, 200, 200, 2, 100, 200, 2, 200, 400, 3, 100, 300, 3, 200, 600"
 string.Join (", ", result.Select (i => i.ToString ()));
 ```
 
+The above output should be `[ 1, 100, 100, 1, 200, 200, 2, 100, 200, 2, 200, 400, 3, 100, 300, 3, 200, 600 ]`
+
+## Haskell State monad
+
+In Haskell pure world, state is not allowed to be mutated. Instead the intention is reproduced via the `State<TState, TValue>` monad that allows a piece of state to be propagated at the same time as intermediary results. This also shipped in the library.
+
+The below sample borrows from the Haskell tutorial at [https://en.wikibooks.org/wiki/Haskell/Understanding\_monads/State](https://en.wikibooks.org/wiki/Haskell/Understanding_monads/State)
+
+We are somewhat cheating in our case because where in Haskell it makes sense to pass the random value as state to be used as the next random seed, in C# it’s not really necessary since the before state is already encapsulated in the Random class.
+
+```csharp
+// For Get and Put
+using static Neteril.ComputationExpression.Instances.State;
+
+static (int random, Random generator) RandomR ((int low, int high) interval, Random initialGenerator)
+	=> (initialGenerator.Next (interval.low, interval.high), new Random ());
+
+var rollDie = ComputationExpression.Run<int, State<Random, int>> (new StateExpressionBuilder<Random> (), async () => {
+	var generator = await Get<Random> ();
+	var (value, newGenerator) = RandomR ((1, 6), generator);
+	await Put<Random, int> (newGenerator);
+	return value;
+});
+
+EvalState<Random, int> (rollDie, new Random ());
+```
+
+The output of this code block will give you a random integer at the end.
+
 ## Probabilities as monads
 
-Probability distribution can be represented as monads and thus chain together. The example used here comes courtesy of [https://www.chrisstucchio.com/blog/2016/probability\_the\_monad.html](https://www.chrisstucchio.com/blog/2016/probability_the_monad.html)
+Probability distribution can be represented as monads and thus chained together. The example used here comes courtesy of [https://www.chrisstucchio.com/blog/2016/probability\_the\_monad.html](https://www.chrisstucchio.com/blog/2016/probability_the_monad.html)
 
 Note that for execution time constraints, sampling count has been drastically reduced so that the histogram at the end can be generated in a reasonable amount of time (still can take a minute or two). Ultimately that means actual results are probably not that correct.
 
@@ -262,7 +162,7 @@ Note that for execution time constraints, sampling count has been drastically re
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Random;
 
-public abstract class Probability<T> : Monad<T>
+public abstract class Probability<T> : IMonad<T>
 {
 	public abstract double Prob (T t);
 }
@@ -330,7 +230,7 @@ static IEnumerable<double> DoubleRange (double from, double to, double step)
 
 public class ProbabilityBuilder : IMonadExpressionBuilder
 {
-	Monad<T> IMonadExpressionBuilder.Bind<U, T> (Monad<U> m, Func<U, Monad<T>> f)
+	IMonad<T> IMonadExpressionBuilder.Bind<U, T> (IMonad<U> m, Func<U, IMonad<T>> f)
 	{
 		Probability<U> p = (Probability<U>)m;
 		return new ComposedProbability<T> (t => {
@@ -342,14 +242,16 @@ public class ProbabilityBuilder : IMonadExpressionBuilder
 		});
 	}
 
-	Monad<T> IMonadExpressionBuilder.Return<T> (T v)
+	IMonad<T> IMonadExpressionBuilder.Return<T> (T v)
 		=> new ComposedProbability<T> (t => EqualityComparer<T>.Default.Equals (t, v) ? 1 : 0);
 
-	Monad<T> IMonadExpressionBuilder.Zero<T> () => new ComposedProbability<T> (_ => 1);
+	IMonad<T> IMonadExpressionBuilder.Zero<T> () => new ComposedProbability<T> (_ => 1);
 
-	Monad<T> IMonadExpressionBuilder.Combine<T> (Monad<T> m, Monad<T> n) => throw new NotSupportedException ();
+	IMonad<T> IMonadExpressionBuilder.Combine<T> (IMonad<T> m, IMonad<T> n) => throw new NotSupportedException ();
 }
 ```
+
+Now let's plot graphically the probability distribution of the resulting composition:
 
 ```csharp
 #r "OxyPlot"

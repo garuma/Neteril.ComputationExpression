@@ -39,7 +39,7 @@ Option<int> TryDivide (int up, int down)
 
 class MaybeBuilder : IMonadExpressionBuilder
 {
-  Monad<T> IMonadExpressionBuilder.Bind<U, T> (Monad<U> m, Func<U, Monad<T>> f)
+  IMonad<T> IMonadExpressionBuilder.Bind<U, T> (IMonad<U> m, Func<U, IMonad<T>> f)
   {
     switch ((Option<U>)m) {
       case Some<U> some: return f (some.Item);
@@ -47,11 +47,13 @@ class MaybeBuilder : IMonadExpressionBuilder
       default: return None<T>.Value;
     }
   }
-  public Monad<T> Return<T> (T v) => Some.Of (v);
-  public Monad<T> Zero<T> () => None<T>.Value;
+  public IMonad<T> Return<T> (T v) => Some.Of (v);
+  public IMonad<T> Zero<T> () => None<T>.Value;
+  // We don't have optional interface methods in C# quite yet
+  public IMonad<T> Combine<T> (IMonad<T> m, IMonad<T> n) => throw new NotSupportedException ();
 }
 
-ComputationExpression.Run<int, Option<int>> (new MaybeBuilder (), async () => {
+ComputationExpression.Run<int, Option<int>> (new OptionExpressionBuilder (), async () => {
   var val1 = await TryDivide (120, 2);
   var val2 = await TryDivide (val1, 2);
   var val3 = await TryDivide (val2, 2);
@@ -61,4 +63,4 @@ ComputationExpression.Run<int, Option<int>> (new MaybeBuilder (), async () => {
 
 In this example the code is very similar with C#'s `await` becoming the equivalent of F#'s `let!`/`do!`. The library also supports the `yield` keyword via an extra API call.
 
-See the included [Workbook](https://github.com/Microsoft/Workbooks) `Examples` for API usage and full running samples.
+In addition to the plumbing, the library provides some monads and their expression builder already. They can be found in the *Instances* folder. See the included [Workbook](https://github.com/Microsoft/Workbooks) `Examples` for API usage and full running samples.

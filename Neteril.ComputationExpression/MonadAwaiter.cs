@@ -6,16 +6,16 @@ namespace Neteril.ComputationExpression
 	// Our awaiter simply acts as a mutable holder for the bind state
 	public class MonadAwaiter<T> : INotifyCompletion
 	{
-		Monad<T> monad;
+		IMonad<T> monad;
 		T result;
 
-		public MonadAwaiter (Monad<T> m)
+		public MonadAwaiter (IMonad<T> m)
 		{
 			this.monad = m;
 		}
 
 		// Helpers to get/set the intermediate results of Bind
-		internal Monad<T> CurrentMonad => monad;
+		internal IMonad<T> CurrentMonad => monad;
 		internal void SetNextStep (T value) => this.result = value;
 
 		public T GetResult () => result;
