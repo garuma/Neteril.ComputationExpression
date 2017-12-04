@@ -1,5 +1,8 @@
 # Neteril.ComputationExpression
 
+![logo image](http://neteril.org/~jeremie/icon_neteril_computation_expression_github.png)
+
+
 <a href="https://www.nuget.org/packages/Neteril.ComputationExpression"><img src="https://img.shields.io/nuget/v/Neteril.ComputationExpression.svg" alt="NuGet" /></a>
 
 A generic re-implementation of [F# computation expressions](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions) in C# by (ab)using async/await.
