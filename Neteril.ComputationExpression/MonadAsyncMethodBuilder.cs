@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Reflection;
+using System.Collections.Generic;
 
 namespace Neteril.ComputationExpression
 {
 	public class MonadAsyncMethodBuilder<T>
 	{
-		IMonadExpressionBuilder builder;
+		readonly IMonadExpressionBuilder builder;
+		readonly MethodInfo processBind;
+		readonly object[] processBindArgs = new object[2];
+		readonly Dictionary<(Type, Type), MethodInfo> processBinds = new Dictionary<(Type, Type), MethodInfo> ();
+
 		IMonad<T> finalResult;
-		System.Reflection.MethodInfo processBind;
 
 		public static MonadAsyncMethodBuilder<T> Create ()
 		{
@@ -22,8 +27,8 @@ namespace Neteril.ComputationExpression
 			this.builder = builder;
 			finalResult = builder.Zero<T> ();
 			processBind = GetType ().GetMethod (
-				"ProcessBind",
-				System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+				nameof (ProcessBind),
+				BindingFlags.Instance | BindingFlags.NonPublic
 			);
 		}
 
@@ -55,17 +60,24 @@ namespace Neteril.ComputationExpression
 				* so we have to resort to good old reflection.
 				*/
 				var monadUType = typeof (TAwaiter).GetGenericArguments ()[0];
-				var monadAwaiter = awaiter;
+				var awaiterCopy = awaiter;
+				var stateMachineType = typeof (TStateMachine);
 				var stateMachineCopy = stateMachine;
-				processBind.MakeGenericMethod (monadUType, typeof (TStateMachine))
-				           .Invoke (this, new object[] { monadAwaiter, stateMachineCopy });
+
+				MethodInfo pbReal;
+				var pbKey = (monadUType, stateMachineType);
+				if (!processBinds.TryGetValue (pbKey, out pbReal))
+					processBinds[pbKey] = pbReal = processBind.MakeGenericMethod (monadUType, stateMachineType);
+				processBindArgs[0] = awaiterCopy;
+				processBindArgs[1] = stateMachineCopy;
+				pbReal.Invoke (this, processBindArgs);
 				return;
 			}
 			if (typeof (TAwaiter).GetGenericTypeDefinition () == typeof (CombineAwaiter<>)) {
 				var yieldAwaiter = (CombineAwaiter<T>)(object)awaiter;
 				var m = builder.Return (yieldAwaiter.YieldedValue);
 				stateMachine.MoveNext ();
-				this.finalResult = builder.Combine (m, finalResult);
+				finalResult = builder.Combine (m, finalResult);
 				return;
 			}
 
@@ -76,22 +88,20 @@ namespace Neteril.ComputationExpression
 			where TStateMachine : IAsyncStateMachine
 		{
 			var monad = monadAwaiter.CurrentMonad;
-			var machineState = Machinist<TStateMachine>.GetState (stateMachine);
+			var machineState = Machinist<TStateMachine>.GetState (ref stateMachine);
 			var userMonad = builder.Bind<U, T> (monad, value => {
-				/* If we are called that means we keep the
-				 * control of the execution flow, no need
-				 * to produce a monad instance of our own
-				 * at that stage since it will be fed in
-				 * later.
+				/* If we are called that means we keep the control of the execution
+				 * flow, no need to produce a monad instance of our own at that stage
+				 * since it will be fed in later.
 				 */
 				monadAwaiter.SetNextStep (value);
-				if (Machinist<TStateMachine>.GetState (stateMachine) != machineState)
-					Machinist<TStateMachine>.ResetMachine (stateMachine, machineState, monadAwaiter);
+				if (Machinist<TStateMachine>.GetState (ref stateMachine) != machineState)
+					Machinist<TStateMachine>.Reset (ref stateMachine, machineState, monadAwaiter);
 				stateMachine.MoveNext ();
 				return finalResult;
 			});
 			if (userMonad != null)
-				this.finalResult = userMonad;
+				finalResult = userMonad;
 		}
 
 		public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine> (ref TAwaiter awaiter, ref TStateMachine stateMachine)
