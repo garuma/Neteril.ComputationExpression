@@ -15,9 +15,11 @@
   <PropertyGroup>
     <Description>Computation expressions for C# based on async/await</Description>
     <PackageId>Neteril.ComputationExpression</PackageId>
-    <PackageVersion>0.1.1</PackageVersion>
+    <PackageVersion>0.2.1</PackageVersion>
     <Authors>Jérémie Laval</Authors>
     <Copyright>(c) Jérémie Laval</Copyright>
     <PackageLicenseUrl>https://opensource.org/licenses/Apache-2.0</PackageLicenseUrl>
+    <PackageIconUrl>http://neteril.org/~jeremie/icon_neteril_computation_expression.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/garuma/Neteril.ComputationExpression</PackageProjectUrl>
   </PropertyGroup>
 </Project>

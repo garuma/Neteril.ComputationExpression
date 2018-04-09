@@ -3,7 +3,7 @@ packages:
 - id: MathNet.Numerics.Core
   version: 3.17.0
 - id: Neteril.ComputationExpression
-  version: 0.1.1
+  version: 0.2.1
 - id: OxyPlot.Core
   version: 2.0.0-unstable1013
 uti: com.xamarin.workbook
@@ -19,6 +19,10 @@ platforms:
 using System;
 using System.Runtime.CompilerServices;
 using Neteril.ComputationExpression;
+// Import shorter "operator" names, currently those are
+//  - CxRun as a shortand for ComputationExpression.Run
+//  - CxYield as a shortand for ComputationExpression.Yield
+using static Neteril.ComputationExpression.Operators;
 ```
 
 ## The Maybe workflow with Option\<T>
@@ -61,7 +65,7 @@ In this example we are executing a succession of division, modeling the error ca
 
 ```csharp
 Console.WriteLine ("Good example");
-var good = ComputationExpression.Run<int, Option<int>> (new OptionExpressionBuilder (), async () => {
+var good = CxRun<int, Option<int>> (new OptionExpressionBuilder (), async () => {
 	var val1 = await TryDivide (120, 2);
 	var val2 = await TryDivide (val1, 2);
 	var val3 = await TryDivide (val2, 2);
@@ -72,7 +76,7 @@ PrintResult (good);
 
 Console.WriteLine ();
 Console.WriteLine ("Bad example");
-var bad = ComputationExpression.Run<int, Option<int>> (new OptionExpressionBuilder (), async () => {
+var bad = CxRun<int, Option<int>> (new OptionExpressionBuilder (), async () => {
 	var val1 = await TryDivide (120, 2);
 	var val2 = await TryDivide (val1, 0);
 	var val3 = await TryDivide (val2, 2);
@@ -105,17 +109,16 @@ We can also end up re-creating our good old `yield return` but with async/await 
 ```csharp
 #pragma warning disable 4014
 
-using static Neteril.ComputationExpression.ComputationExpression;
 // The Enumerable monad is given in the library
 using Neteril.ComputationExpression.Instances;
 
-var result = ComputationExpression.Run<int, EnumerableMonad<int>> (new EnumerableExpressionBuilder (), async () => {
+var result = CxRun<int, EnumerableMonad<int>> (new EnumerableExpressionBuilder (), async () => {
 	var item = await (EnumerableMonad<int>)new [] { 1, 2, 3 };
 	var item2 = await (EnumerableMonad<int>)new [] { 100, 200 };
 	// We want back a enumeration containing the concatenation of (item, item2, item1 * item2)
 	// for all successive values of item1 and item2
-	await Yield (item);
-	await Yield (item2);
+	await CxYield (item);
+	await CxYield (item2);
 	return item * item2;
 });
 string.Join (", ", result.Select (i => i.ToString ()));
@@ -138,7 +141,7 @@ using static Neteril.ComputationExpression.Instances.State;
 static (int random, Random generator) RandomR ((int low, int high) interval, Random initialGenerator)
 	=> (initialGenerator.Next (interval.low, interval.high), new Random ());
 
-var rollDie = ComputationExpression.Run<int, State<Random, int>> (new StateExpressionBuilder<Random> (), async () => {
+var rollDie = CxRun<int, State<Random, int>> (new StateExpressionBuilder<Random> (), async () => {
 	var generator = await Get<Random> ();
 	var (value, newGenerator) = RandomR ((1, 6), generator);
 	await Put<Random, int> (newGenerator);
@@ -257,7 +260,7 @@ Now let's plot graphically the probability distribution of the resulting composi
 #r "OxyPlot"
 using OxyPlot;
 
-var result = ComputationExpression.Run<double, Probability<double>> (new ProbabilityBuilder (), async () => {
+var result = CxRun<double, Probability<double>> (new ProbabilityBuilder (), async () => {
 	var l = await new ContinuousDistributionProbability (new Beta (51, 151));
 	var n = await new DiscreteDistributionProbability (new Binomial (l, 100));
 	return n / 100.0;
