@@ -10,11 +10,12 @@ namespace Neteril.ComputationExpression
 		public static TMonad Run<T, TMonad> (IMonadExpressionBuilder builder, Func<IMonad<T>> body)
 			where TMonad : IMonad<T>
 		{
+			var prevBuilder = CurrentBuilder;
 			try {
 				CurrentBuilder = builder;
 				return (TMonad)body ();
 			} finally {
-				CurrentBuilder = null;
+				CurrentBuilder = prevBuilder;
 			}
 		}
 
