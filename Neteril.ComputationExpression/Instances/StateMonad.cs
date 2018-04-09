@@ -31,6 +31,8 @@ namespace Neteril.ComputationExpression.Instances
 
 	public class StateExpressionBuilder<TState> : IMonadExpressionBuilder
 	{
+		public static readonly StateExpressionBuilder<TState> Instance = new StateExpressionBuilder<TState> ();
+
 		IMonad<T> IMonadExpressionBuilder.Bind<U, T> (IMonad<U> m, Func<U, IMonad<T>> f)
 		{
 			var previousStateMonad = ((State<TState, U>)m);

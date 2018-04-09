@@ -19,6 +19,8 @@ namespace Neteril.ComputationExpression.Instances
 
 	public class OptionExpressionBuilder : IMonadExpressionBuilder
 	{
+		public static readonly OptionExpressionBuilder Instance = new OptionExpressionBuilder ();
+
 		IMonad<T> IMonadExpressionBuilder.Bind<U, T> (IMonad<U> m, Func<U, IMonad<T>> f)
 		{
 			switch ((Option<U>)m) {

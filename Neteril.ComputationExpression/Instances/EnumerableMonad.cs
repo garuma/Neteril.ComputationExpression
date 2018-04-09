@@ -20,6 +20,8 @@ namespace Neteril.ComputationExpression.Instances
 
 	public class EnumerableExpressionBuilder : IMonadExpressionBuilder
 	{
+		public static readonly EnumerableExpressionBuilder Instance = new EnumerableExpressionBuilder ();
+
 		IMonad<T> IMonadExpressionBuilder.Bind<U, T> (IMonad<U> m, Func<U, IMonad<T>> f)
 		{
 			var previousEnumerableMonad = (EnumerableMonad<U>)m;
