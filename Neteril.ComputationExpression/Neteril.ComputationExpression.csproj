@@ -16,6 +16,7 @@
   <ItemGroup>
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.4.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.2.33" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
