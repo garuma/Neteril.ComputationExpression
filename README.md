@@ -4,6 +4,7 @@
 
 
 <a href="https://www.nuget.org/packages/Neteril.ComputationExpression"><img src="https://img.shields.io/nuget/v/Neteril.ComputationExpression.svg" alt="NuGet" /></a>
+[![Build Status](https://dev.azure.com/jelaval/Neteril.ComputationExpression/_apis/build/status/garuma.Neteril.ComputationExpression)](https://dev.azure.com/jelaval/Neteril.ComputationExpression/_build/latest?definitionId=1)
 
 A generic re-implementation of [F# computation expressions](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions) in C# by (ab)using async/await.
 
